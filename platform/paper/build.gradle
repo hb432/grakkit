@@ -1,0 +1,107 @@
+plugins {
+    id 'java'
+    id "com.github.node-gradle.node" version "7.1.0"
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
+dependencies {
+    // common lib deps
+    implementation project(':kernel')
+    implementation 'me.carleslc.Simple-YAML:Simple-Yaml:1.8.4'
+
+    // graal deps
+    implementation "org.graalvm.js:js-language:${graalVersion}"
+    implementation "org.graalvm.polyglot:polyglot:${graalVersion}"
+    implementation "org.graalvm.nativeimage:native-image-base:${graalVersion}"
+    implementation "org.graalvm.truffle:truffle-api:${graalVersion}"
+
+    // platform dependencies
+    compileOnly("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
+}
+
+def targetJavaVersion = 21
+
+node {
+    // Optional: Specify Node.js version or download if not present
+    // download = true
+}
+
+def jsProjectDir = file("${project.projectDir}/../../js/grakkit")
+// log the jsProjectDir
+println("jsProjectDir: ${jsProjectDir}")
+
+tasks.register('tsc', NpxTask) {
+    dependsOn npmInstall
+    workingDir = jsProjectDir
+    command = 'tsc'
+}
+
+tasks.register('copyJsDistIntoNodeModules', Copy) {
+    dependsOn tsc
+    from "${jsProjectDir}/dist"
+    into "${buildDir}/resources/main/js"
+}
+
+tasks.register('generateJsFileList') {
+    dependsOn copyJsDistIntoNodeModules
+    def jsResourcesDir = file("${buildDir}/resources/main/js")
+    def jsFileListFile = file("${buildDir}/resources/main/js-file-list.txt")
+
+    inputs.dir jsResourcesDir
+    outputs.file jsFileListFile
+
+    doLast {
+        jsFileListFile.parentFile.mkdirs()
+        jsFileListFile.createNewFile()
+
+        fileTree(jsResourcesDir).visit { FileVisitDetails details ->
+            if (details.file.isFile()) {
+                String relativePath = details.relativePath.pathString
+                jsFileListFile.append(relativePath + '\n')
+            }
+        }
+    }
+}
+
+processResources {
+    dependsOn generateJsFileList
+}
+
+jar {
+    archiveBaseName.set('grakkit')
+    archiveClassifier.set('paper')
+    archiveVersion.set(version)
+}
+
+shadowJar {
+    mergeServiceFiles()
+    archiveBaseName.set('grakkit-paper')
+    archiveClassifier.set('paper')
+    archiveFileName.set('grakkit-paper.jar')
+    from(processResources.outputs) // Include processed resources
+}
+
+repositories {
+    mavenCentral()
+    maven { url = "https://repo.papermc.io/repository/maven-public/" }
+    maven { url = "https://oss.sonatype.org/content/groups/public/" }
+    maven { url = 'https://jitpack.io' }
+}
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(targetJavaVersion))
+    }
+    def javaVersion = JavaVersion.toVersion(targetJavaVersion)
+    sourceCompatibility = javaVersion
+    targetCompatibility = javaVersion
+    if (JavaVersion.current() < javaVersion) {
+        toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+tasks.register('buildJars') { dependsOn shadowJar}

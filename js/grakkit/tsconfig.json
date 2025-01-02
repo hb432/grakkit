@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "declaration": true,
+    "declarationMap": true,
+    "forceConsistentCasingInFileNames": true,
+    "lib": [
+      "ESNext",
+        "DOM"
+    ],
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "skipLibCheck": true,
+    "target": "ES2020",
+    "outDir": "dist",
+    "baseUrl": ".",
+    "esModuleInterop": true
+  },
+  "typeRoots": [
+    "node_modules/@graal-types",
+    "src/type",
+    "@grakkit"
+  ],
+  "include": [
+    "src/**/*",
+    "../../node_modules/@graal-types"
+  ]
+}
