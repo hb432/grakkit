@@ -40,3 +40,8 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+.idea/
+node_modules/
+.gradle/
+*.log
