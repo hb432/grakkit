@@ -1,9 +1,11 @@
 // src/core/ticker.ts
 import { TaskId, TaskObject, Tick } from '../type/types';
-import { lifecycle } from '../api';
-import {Kontext} from "../type/GrakkitAPI"; // Import Grakkit from index.ts in core
+import {Grakkit} from "../type/Grakkit"; // Import Grakkit from index.ts in core
+import { createLifecycleHandler } from '../lifecycle/lifecycle';
 
 const Context = Symbol('TickContext');
+
+const lifecycle = createLifecycleHandler();
 
 interface TickContext {
     tick: number;
@@ -26,7 +28,7 @@ const createTicker = () => {
 
     const start = () => {
         ctx.isActive = true;
-        Kontext.engine.setTickHandle(nextTick);
+        Grakkit.kontext.setTickHandle(nextTick);
     };
 
     const stop = async () => {
@@ -55,7 +57,6 @@ const createTicker = () => {
 
 export const ticker = createTicker();
 
-// Export these functions
 export const isTick = (tick: number): tick is Tick => true;
 export const isTaskId = (id: number): id is TaskId => true;
 export const tick = (tick: number | Tick) => tick as Tick;

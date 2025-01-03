@@ -1,8 +1,8 @@
 // src/api/events.ts
-import {catchAndLogUnhandledError, Grakkit} from '../core';
+import {catchAndLogUnhandledError} from '../core';
 import { EventListener, ScriptEventListener, StringEventPriority } from '../type/types';
 import {env} from "../platform/paper";
-
+import {Grakkit} from "../type/Grakkit";
 const createEventListener = () => new (Java.extend(Java.type('org.bukkit.event.Listener'), {}))() as any; // Simplified
 const MainInstanceListener = createEventListener();
 

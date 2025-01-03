@@ -122,7 +122,7 @@ export class Kontext {
 /**
  * Represents a specialized Grakkit context loaded from a file.
  */
-export class FileGrakkitKontext extends Kontext {
+export class FileKontext extends Kontext {
     constructor(props: string, root: string, main: string);
 }
 
@@ -142,7 +142,7 @@ export interface GrakkitAPI {
     topics: Map<string, JSCallback<any>[]>;
 
     /** The context running on the main thread. */
-    kernelKontext: FileGrakkitKontext;
+    kernelKontext: FileKontext;
 
     /** All kontexts created with the context management system. */
     kontexts: Kontext[];
@@ -172,4 +172,121 @@ export interface GrakkitAPI {
 
     /** Updates the current ClassLoader to one that supports GraalJS. */
     patch(loader: any): void; // Using 'any' as the specific Loader type isn't provided
+}
+
+/**
+ * Provides API for interacting with a specific Grakkit context.
+ */
+export class KontextAPI {
+    /** The underlying linked context. */
+    kontext: Kontext;
+
+    /**
+     * Creates a new KontextAPI object around the given context.
+     * @param kontext The underlying linked context.
+     */
+    constructor(kontext: Kontext);
+
+    /**
+     * Destroys the current context.
+     * @throws Exception If trying to destroy the primary instance.
+     */
+    destroy(): void;
+
+    /**
+     * Sends a message into the global event framework. Listeners will fire on the next tick.
+     * @param topic The topic of the message.
+     * @param payload The message payload.
+     */
+    emit(topic: string, payload: string): void;
+
+    /**
+     * Creates a new file context with the given index path.
+     * @param main The main file path.
+     * @returns The newly created file context.
+     */
+    fileKontext(main: string): Kontext;
+
+    /**
+     * Creates a new file context with the given index path and properties tag.
+     * @param main The main file path.
+     * @param props The properties tag.
+     * @returns The newly created file context.
+     */
+    fileKontext(main: string, props: string): Kontext;
+
+    /**
+     * Gets the properties of the current instance.
+     * @returns The properties as a string.
+     */
+    getProperties(): string;
+
+    /**
+     * Returns the "root" directory of the current instance.
+     * @returns The root directory path as a string.
+     */
+    getRoot(): string;
+
+    /**
+     * Returns the current configuration of Grakkit.
+     * @returns The Grakkit configuration.
+     */
+    getConfig(): GrakkitConfig;
+
+    /**
+     * Loads the given class from the given source, usually a JAR library.
+     * @param source The file source (JAR file).
+     * @param name The fully qualified class name.
+     * @returns The loaded class.
+     * @throws ClassNotFoundException If the class cannot be found.
+     * @throws MalformedURLException If the file URL is malformed.
+     */
+    loadClass(source: File, name: string): Class<any>;
+
+    /**
+     * Unsubscribes an event listener from the topic registry.
+     * @param topic The topic to unsubscribe from.
+     * @param listener The listener to remove.
+     * @returns True if the listener was removed, false otherwise.
+     */
+    off(topic: string, listener: Value): boolean;
+
+    /**
+     * Subscribes an event listener to the topic registry.
+     * @param topic The topic to subscribe to.
+     * @param listener The listener to add.
+     */
+    on(topic: string, listener: Value): void;
+
+    /**
+     * Prepends a script to be executed on the next tick.
+     * @param script The script to execute.
+     */
+    frontload(script: Value): void;
+
+    /**
+     * Creates a new script context with the given source code.
+     * @param javascript The source JavaScript code.
+     * @returns The newly created script context.
+     */
+    scriptKontext(javascript: string): Kontext;
+
+    /**
+     * Creates a new script context with the given source code and property tag.
+     * @param javascript The source JavaScript code.
+     * @param props The property tag.
+     * @returns The newly created script context.
+     */
+    scriptKontext(javascript: string, props: string): Kontext;
+
+    /**
+     * Closes and re-opens the current context. Works best when pushed into the tick loop.
+     */
+    swap(): void;
+
+    /**
+     * Closes all open contexts, resets everything, and swaps the main/kernel context.
+     * @throws Exception If this method is called from a non-kernel context.
+     */
+    reload(): void;
 }

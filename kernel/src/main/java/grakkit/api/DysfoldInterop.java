@@ -1,27 +1,32 @@
 package grakkit.api;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
+import org.graalvm.polyglot.PolyglotException;
+
+import java.nio.charset.StandardCharsets;
 
 public class DysfoldInterop {
-    public Object get (Object object, String chain) {
-        String[] fields = chain.split("\\.");
-        for (String field : fields) {
-            try {
-                Field internal = object.getClass().getDeclaredField(field);
-                internal.setAccessible(true);
-                object = internal.get(object);
-            } catch (Throwable error) {
-                try {
-                    String getter = "get" + field.substring(0, 1).toUpperCase() + field.substring(1);
-                    Method internal = object.getClass().getDeclaredMethod(getter);
-                    object = internal.invoke(object);
-                } catch (Throwable error2) {
-                    error2.printStackTrace();
-                    return null;
-                }
-            }
-        }
-        return object;
+    public String bytesToString(byte[] bytes) {
+        return new String(bytes, StandardCharsets.UTF_8);
     }
+
+    /**
+     * Executes a function while catching polyglot exceptions thrown by it.
+     * Java exceptions that don't pass at least one layer of JS are not caught.
+     *
+     * @param func A function.
+     * @return An error, or null if no error occurred.
+     */
+    public JSError catchError(Runnable func) {
+        try {
+            func.run();
+            return null;
+        } catch (PolyglotException e) {
+            return new JSError(e);
+        }
+    }
+
+    public double toDouble(double value) {
+        return value;
+    }
+
 }

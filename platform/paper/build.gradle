@@ -30,15 +30,41 @@ def jsProjectDir = file("${project.projectDir}/../../js/grakkit")
 // log the jsProjectDir
 println("jsProjectDir: ${jsProjectDir}")
 
-tasks.register('tsc', NpxTask) {
+////compile js
+//tasks.register('tsc', NpxTask) {
+//    dependsOn npmInstall
+//    workingDir = jsProjectDir
+//    command = 'tsc'
+//}
+
+
+// build the js project
+tasks.register('npmBuild', NpxTask) {
     dependsOn npmInstall
     workingDir = jsProjectDir
-    command = 'tsc'
+    command = 'npm'
+    args = ['run', 'build']
+}
+
+// copy package*.json files into dist
+tasks.register('copyPackageJsonIntoDist', Copy) {
+    dependsOn 'npmBuild'
+    from jsProjectDir
+    into "${jsProjectDir}/dist"
+    include 'package*.json'
+}
+
+//"npm ci --production"
+tasks.register('npmPostBuild', NpxTask) {
+    dependsOn 'copyPackageJsonIntoDist'
+    workingDir = jsProjectDir
+    command = 'npm'
+    args = ['ci', '--production']
 }
 
 tasks.register('copyJsDistIntoNodeModules', Copy) {
-    dependsOn tsc
-    from "${jsProjectDir}/dist"
+    dependsOn 'npmPostBuild'
+    from "${jsProjectDir}"
     into "${buildDir}/resources/main/js"
 }
 
@@ -46,6 +72,8 @@ tasks.register('generateJsFileList') {
     dependsOn copyJsDistIntoNodeModules
     def jsResourcesDir = file("${buildDir}/resources/main/js")
     def jsFileListFile = file("${buildDir}/resources/main/js-file-list.txt")
+    // wipe old jsFile for new writing
+    jsFileListFile.delete()
 
     inputs.dir jsResourcesDir
     outputs.file jsFileListFile

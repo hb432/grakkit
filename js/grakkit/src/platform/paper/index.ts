@@ -2,33 +2,17 @@
 export * from './command';
 export * from './async';
 
+const Bukkit = Java.type('org.bukkit.Bukkit') as any;
+
 export const env = {
     name: 'bukkit',
     content: {
-        manager: {
-            registerEvent: (eventClass: any, listener: any, priority: any, executor: any, plugin: any) => {
-                // Simplified implementation for demonstration
-                console.log(`Event registered: ${eventClass.name}`);
-            },
-        },
-        plugin: {
-            getDataFolder: () => ({
-                getParentFile: () => ({
-                    getParentFile: () => ({
-                        getFreeSpace: () => 1000,
-                        getTotalSpace: () => 2000,
-                        getUsableSpace: () => 1500,
-                    }),
-                }),
-            }),
-        },
-        server: {
-            getScheduler: () => ({
-                runTaskAsynchronously: (_plugin: any, runnable: any) => {
-                    runnable.run();
-                },
-            }),
-        },
+        manager: Bukkit.getPluginManager(),
+        server: Bukkit.getServer(),
+        plugin: Bukkit.getPluginManager().getPlugin('Grakkit'),
         Runnable: Java.type('java.lang.Runnable'),
     },
 };
+
+// register js command
+export * from './js';

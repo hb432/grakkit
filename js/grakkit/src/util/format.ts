@@ -1,6 +1,4 @@
 // src/utils/format.ts
-import { regex } from '.';
-
 const circular = Symbol();
 
 export const format = {
@@ -58,7 +56,7 @@ export const format = {
             if (object === circular) {
                 return '...';
             } else {
-                const type = toString.call(object);
+                const type = String.toString.call(object);
                 switch (type) {
                     case '[object Array]':
                     case '[object Object]':
@@ -99,7 +97,7 @@ export const format = {
                 }
             }
         } else {
-            switch (toString.call(object)) {
+            switch (String.toString.call(object)) {
                 case '[object Array]':
                     return `[ ${[...object].map((value: any) => format.output(object === value ? circular : value, true)).join(', ')} ]`;
                 case '[object Object]':
@@ -114,7 +112,9 @@ export const format = {
                     if (typeof object.getCanonicalName === 'function') {
                         return object.getCanonicalName();
                     } else if (typeof object.toString === 'function') {
-                        return regex.replace(object.toString(), '\\r', '');
+                        //return regex.replace(object.toString(), '\\r', '');
+                        // fixed regex using RegExr
+                        return RegExp.prototype.toString.call(object).replace(/\\r/g, '');
                     } else {
                         return `${object}` || 'function () { [native code] }';
                     }

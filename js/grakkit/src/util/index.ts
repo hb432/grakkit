@@ -3,7 +3,7 @@ export * from './files';
 export * from './format';
 export * from './regex';
 
-export { isTaskId, isTick, taskId, tick } from '../core/ticker';
+export { isTaskId, isTick, taskId, tick } from '../lifecycle/ticker';
 
 export const javaSourceMethodSkips = [
     'grakkit.DysfoldInterop.catchError',

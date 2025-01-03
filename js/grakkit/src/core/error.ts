@@ -41,8 +41,9 @@ export const logError = (error: unknown, msg?: string) => {
         const errorMsg = formatError(jsError);
         msg && console.log(msg);
         console.log(errorMsg)
-    } catch (logError) {
+    } catch (thislogError) {
         console.log('ERROR: There was an error logging an error. Please report to Grakkit. ', logError.name);
+        // @ts-expect-error
         console.log(logError.message, logError.stack);
         // @ts-expect-error
         console.log('Original error: ', error?.name);

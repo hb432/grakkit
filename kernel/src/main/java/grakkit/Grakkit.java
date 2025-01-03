@@ -41,21 +41,20 @@ public class Grakkit {
     // Initializes the Grakkit Environment
     public static void init(String root) {
         Paths.get(root).toFile().mkdir();
+
         Grakkit.config = new GrakkitConfig(root, "config.yml");
         // first verify that node_modules/grakkit exists, and if not, create it and copy the js resources
-        // otherwise, don't copy the resources, as they are already there
         if (!Paths.get(root, "node_modules", "grakkit").toFile().exists()) {
             try {
                 JSLoader.copyJsResources(Grakkit.class, Paths.get(root, "node_modules", "grakkit"));
+                Grakkit.kernelKontext = new FileKontext("grakkit", Grakkit.config.main, root);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
+        // add the lines console.log('Modern JS for Minecraft, with the Graal Kernel Kit!') and require('grakkit/index.js') to the main file
+        // if they don't already exist
         Grakkit.kernelKontext = new FileKontext("grakkit", Grakkit.config.main, root);
-        // Try to open the kernel kontext
-        // log the root and main
-        System.out.println("Root: " + root);
-        System.out.println("Main: " + Grakkit.config.main);
         try {
             Grakkit.kernelKontext.open();
         } catch (Throwable e) {

@@ -1,4 +1,7 @@
 // src/index.ts
-export * from './api';
-export * from './core';
-export * from './util';
+export * as api from './api';
+export * as core from './core';
+export * as util from './util';
+
+// lifecycle
+export * from './lifecycle/';

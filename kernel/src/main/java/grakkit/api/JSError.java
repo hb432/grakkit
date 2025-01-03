@@ -1,51 +1,103 @@
 package grakkit.api;
 
 import org.graalvm.polyglot.PolyglotException;
+import org.graalvm.polyglot.SourceSection;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class JSError {
 
-    /** The exception which caused the error. */
-    public final PolyglotException error;
+    public static class FrameInfo {
 
-    /** The message associated with this error. */
-    public final String message;
+        /**
+         * Whether this frame is Java or JS code.
+         */
+        public final boolean javaFrame;
 
-    /** The full stack trace associated with this error. */
-    public final String stack;
+        /**
+         * Source module. For Java frames, this is a fully qualified class name.
+         * For JS frames, this is path relative to plugin root.
+         */
+        public final String source;
 
-    /** The formatted stack trace associated with this error. */
-    public final String trace;
+        /**
+         * Java method or JS function name.
+         */
+        public final String methodName;
+
+        /**
+         * File name (not path).
+         */
+        public final String fileName;
+
+        /**
+         * Line number in the file.
+         */
+        public final int line;
+
+        public final PolyglotException.StackFrame frame;
+
+        public FrameInfo(PolyglotException.StackFrame frame) {
+            this.javaFrame = frame.isHostFrame();
+
+            this.frame = frame;
+
+            if (javaFrame) {
+                StackTraceElement hostFrame = frame.toHostFrame();
+                this.source = hostFrame.getClassName();
+                this.methodName = hostFrame.getMethodName();
+                this.fileName = hostFrame.getFileName();
+                this.line = hostFrame.getLineNumber();
+            } else {
+                SourceSection location = frame.getSourceLocation();
+                if (location != null) {
+                    this.source = location.getSource().getName();
+                    this.fileName = Path.of(source).getFileName().toString();
+                    this.line = location.getStartLine();
+                } else {
+                    // Location is not available, fall back to defaults
+                    this.source = "unknown";
+                    this.fileName = "unknown";
+                    this.line = -1;
+                }
+                this.methodName = frame.getRootName();
+            }
+
+        }
+    }
 
     /**
-     * Constructs a new error with the given exception.
-     *
-     * @param error the exception
+     * Error or exception name.
      */
-    public JSError(PolyglotException error) {
-        this.error = error;
-        this.message = error.getMessage();
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        error.printStackTrace(new PrintStream(output));
-        String[] lines = output.toString().replace("\r", "").split("\n");
-        StringBuilder builder = new StringBuilder();
-        for (int index = 1; index < lines.length; index++) {
-            String line = lines[index].replace("\t", "  ");
-            Matcher matcher = Pattern.compile("^\s*at ([^:]+):([0-9]+)$").matcher(line);
-            if (matcher.matches()) {
-                builder.append(matcher.group(1) + " @ " + matcher.group(2) + "\n");
-            }
-        }
-        this.stack = builder.toString();
-        Matcher matcher = Pattern.compile("^(\\S+): (.+)$").matcher(this.message);
-        if (matcher.matches()) {
-            this.trace = matcher.group(2) + "\n\n" + this.stack;
+    public final String name;
+
+    /**
+     * Error message.
+     */
+    public final String message;
+
+    /**
+     * Stack frames.
+     */
+    public final List<FrameInfo> stack;
+
+    public JSError(PolyglotException e) {
+        if (e.isHostException()) {
+            this.name = e.asHostException().getClass().getName();
+            this.message = e.getMessage();
         } else {
-            this.trace = this.message + "\n\n" + this.stack;
+            this.name = e.getMessage();
+            this.message = null;
+        }
+        this.stack = new ArrayList<>();
+        for (PolyglotException.StackFrame frame : e.getPolyglotStackTrace()) {
+            stack.add(new FrameInfo(frame));
         }
     }
 }

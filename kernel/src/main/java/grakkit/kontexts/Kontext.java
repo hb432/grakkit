@@ -5,6 +5,7 @@ import grakkit.api.DysfoldInterop;
 import grakkit.api.JSCallback;
 import grakkit.api.JSError;
 import grakkit.kontexts.api.KMessage;
+import grakkit.kontexts.api.KontextAPI;
 import grakkit.kontexts.api.Queue;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Engine;
@@ -80,7 +81,7 @@ public class Kontext {
     // Open's this kontext's graal context
     public void open() {
         this.ignoreMultithreadError = true;
-        this.thisID = Kontext.nextID;
+        this.thisID = Kontext.nextID++;
         this.tickCount = 0;
         this.graalContext = Context.newBuilder("js")
                 .engine(Kontext.engine)
@@ -88,11 +89,11 @@ public class Kontext {
                 .allowExperimentalOptions(true)
                 .option("js.nashorn-compat", "true")
                 .option("js.commonjs-require", "true")
-                .option("js.ecmascript-version", "14")
+                .option("js.ecmascript-version", "2022")
                 .option("js.commonjs-require-cwd", this.root)
                 .build();
         this.graalContext.getBindings("js").putMember("__interop", Value.asValue(new DysfoldInterop()));
-        this.graalContext.getBindings("js").putMember("GKK", Value.asValue(this));
+        this.graalContext.getBindings("js").putMember("Grakkit", Value.asValue(new KontextAPI(this)));
         try {
             this.execute();
         } catch (Throwable e) {
@@ -127,36 +128,50 @@ public class Kontext {
     }
 
     public void logError(Throwable error) {
-        if (this.tickCount > 100 && this.ignoreMultithreadError)
+        if (this.tickCount > 100 && this.ignoreMultithreadError) {
             this.ignoreMultithreadError = false;
+        }
 
         if (error instanceof IllegalStateException) {
-            // Ignore the error when initializing environment (common when reloading)
-            if (error.getMessage().contains("Multi threaded access requested by thread Thread") && this.ignoreMultithreadError)
+            // Ignore the error when spinning up the environment. This happens more from
+            // reloading.
+            if (error.getMessage().contains("Multi threaded access requested by thread Thread")
+                    && this.ignoreMultithreadError) {
                 return;
+            }
+
             error.printStackTrace();
+
+            return;
         }
 
         if (error instanceof PolyglotException) {
-            PolyglotException exception = (PolyglotException) error;
+            PolyglotException polyglotException = (PolyglotException) error;
+
+            JSError jsError = new JSError(polyglotException);
+
             try {
-                this.loggerHandle.execute(new JSError(exception), true);
+                this.loggerHandle.execute(jsError, true);
                 return;
-            } catch (Throwable e) {
-                e.printStackTrace();
+            } catch (Throwable errorError) {
+                error.printStackTrace();
                 return;
             }
         }
+
         error.printStackTrace();
     }
+
     // Finding: This is a `Consumer` as it works best with the reload configuration.
     // If we change it to `Value`, it breaks reloading.
     public void setTickHandle(Consumer<Void> tickHandle) {
         if (tickHandle != null) this.tickHandle.register(tickHandle);
     }
+
     public void setOnCloseHandle(Consumer<Void> onCloseHandle) {
         if (onCloseHandle != null) this.onCloseHandle.register(onCloseHandle);
     }
+
     public void setLoggerHandle(Consumer<JSError> loggerHandle) {
         if (loggerHandle != null) this.loggerHandle.register(loggerHandle);
     }

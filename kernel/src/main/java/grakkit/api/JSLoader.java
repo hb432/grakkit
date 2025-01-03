@@ -21,7 +21,6 @@ public class JSLoader {
                         Path targetPath = targetDir.resolve(line);
                         Files.createDirectories(targetPath.getParent());
                         Files.copy(jsStream, targetPath);
-                        System.out.println("Copied: " + line + " to " + targetPath);
                     } else {
                         System.err.println("Resource not found: " + line);
                     }

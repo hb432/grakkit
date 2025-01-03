@@ -1,5 +1,4 @@
 // src/utils/files.ts
-import { regex } from '.';
 import { basic, record, jiFile } from '../type/types';
 import {chain, desync} from "../platform/paper";
 
@@ -17,8 +16,8 @@ export function file(path: string | record | jiFile, ...more: string[]) {
     // @ts-ignore
     // @ts-ignore
     const record: record = {
-        get children() {
-            return record.type === 'folder' ? [...io.listFiles()].map((sub) => file(sub.getPath())) : null
+        get children(): record[] {
+            return record.type === 'folder' ? [...io.listFiles()].map((sub) => file(sub.getPath())) : []
         },
         directory() {
             if (record.type === 'none') {
@@ -68,7 +67,10 @@ export function file(path: string | record | jiFile, ...more: string[]) {
             return record.file('..')
         },
         get path() {
-            return regex.replace(io.getPath(), '(\\\\)', '/')
+            // return RegExp.replace(io.getPath(), '(\\\\)', '/')
+            // the above regex RegExp is not valid ts
+            //fixed:
+            return new RegExp(io.getPath().replace(/(\\)/g, '/')) + '';
         },
         read(async?: boolean) {
             if (async) {
