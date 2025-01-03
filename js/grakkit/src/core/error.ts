@@ -1,6 +1,7 @@
 // src/core/error.ts
 import { mapLineToSource } from './sourceMap';
 import { javaSourceMethodSkips, jsFileSkips, jsMethodSkips } from '../util';
+import {warn} from "./logger";
 
 export const formatError = (error: any) => {
     const list: string[] = [];
@@ -24,7 +25,6 @@ export const formatError = (error: any) => {
     }
     return list.join('\n');
 };
-
 export const logError = (error: unknown, msg?: string) => {
     let jsError;
     try {
@@ -39,16 +39,16 @@ export const logError = (error: unknown, msg?: string) => {
             });
         }
         const errorMsg = formatError(jsError);
-        msg && console.log(msg);
-        console.log(errorMsg)
+        msg && warn(msg);
+        warn(errorMsg)
     } catch (thislogError) {
-        console.log('ERROR: There was an error logging an error. Please report to Grakkit. ', logError.name);
+        warn('ERROR: There was an error logging an error. Please report to Grakkit. ', thislogError);
         // @ts-expect-error
-        console.log(logError.message, logError.stack);
+        warn(logError.message, logError.stack);
         // @ts-expect-error
-        console.log('Original error: ', error?.name);
+        warn('Original error: ', error?.name);
         // @ts-expect-error
-        console.log(error?.message, error?.stack);
+        warn(error?.message, error?.stack);
     }
 };
 
