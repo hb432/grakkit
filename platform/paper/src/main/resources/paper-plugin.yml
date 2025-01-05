@@ -1,9 +1,0 @@
-name: grakkit
-version: '7.0.0-SNAPSHOT'
-main: grakkit.Main
-api-version: '1.21'
-prefix: grakkit
-load: STARTUP
-authors: [Created by RepComm and spacefluff432. Maintained by brayjamin, MercerK, Mythical-Forest-Collective, spacefluff432, TonyGravagno, dustinlacewell, wagyourtail, and waterquarks.]
-description: JavaScript for Minecraft, with the Graal Kernel Kit.
-website: https://github.com/grakkit/grakkit
