@@ -1,4 +1,4 @@
-package grakkit.kontexts.api;
+package grakkit.kontext.api;
 
 public class KMessage {
 

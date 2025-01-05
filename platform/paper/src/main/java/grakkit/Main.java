@@ -1,6 +1,7 @@
 package grakkit;
 
 import grakkit.api.Loader;
+import grakkit.interop.NodeInterop; // Import NodeInterop
 import org.bukkit.command.CommandMap;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -57,23 +58,25 @@ public final class Main extends JavaPlugin {
     }
     @Override
     public void onEnable() {
+        Grakkit.init(this.getDataFolder().getPath()); // CORE - initialize
         try {
             this.getServer().getScheduler().runTaskTimer(this, Grakkit::tick, 0, 1); // CORE - run task loop
         } catch (Throwable e) {
             // none
         }
-        Grakkit.init(this.getDataFolder().getPath()); // CORE - initialize
     }
     private Value asRunnable(Wrapper command) {
         return Value.asValue((Runnable) () -> {});
     }
     @Override
     public void onDisable() {
+        System.out.println("[Grakkit] Disabling Grakkit...");
         Grakkit.close(); // CORE - close before exist
         Main.commands.values().forEach(command -> {
             command.executor = asRunnable(command);
             command.tabCompleter = asRunnable(command);
         });
+        System.out.println("[Grakkit] Grakkit disabled.");
     }
     // Registers a custom command to the server with the given options
     public void register(String namespace, String name, String[] aliases, String permission, String message, Value executor, Value tabCompleter) {

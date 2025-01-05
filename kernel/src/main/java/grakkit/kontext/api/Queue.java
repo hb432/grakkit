@@ -1,6 +1,6 @@
-package grakkit.kontexts.api;
+package grakkit.kontext.api;
 
-import grakkit.kontexts.Kontext;
+import grakkit.kontext.Kontext;
 import org.graalvm.polyglot.Value;
 
 import java.util.LinkedList;

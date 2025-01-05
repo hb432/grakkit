@@ -1,10 +1,10 @@
-package grakkit.kontexts.api;
+package grakkit.kontext.api;
 
 import grakkit.Grakkit;
 import grakkit.GrakkitConfig;
-import grakkit.kontexts.FileKontext;
-import grakkit.kontexts.Kontext;
-import grakkit.kontexts.ScriptKontext;
+import grakkit.kontext.FileKontext;
+import grakkit.kontext.Kontext;
+import grakkit.kontext.ScriptKontext;
 import org.graalvm.polyglot.Value;
 
 import java.io.File;

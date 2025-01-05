@@ -1,12 +1,12 @@
-package grakkit.kontexts;
+package grakkit.kontext;
 
 import grakkit.*;
-import grakkit.api.DysfoldInterop;
+import grakkit.interop.DysfoldInterop;
 import grakkit.api.JSCallback;
 import grakkit.api.JSError;
-import grakkit.kontexts.api.KMessage;
-import grakkit.kontexts.api.KontextAPI;
-import grakkit.kontexts.api.Queue;
+import grakkit.kontext.api.KMessage;
+import grakkit.kontext.api.KontextAPI;
+import grakkit.kontext.api.Queue;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Engine;
 import org.graalvm.polyglot.PolyglotException;
@@ -21,7 +21,10 @@ public class Kontext {
     public Context graalContext;
 
     // The polyglot engine used for all kontexts
-    public static final Engine engine = Engine.newBuilder().option("engine.WarnInterpreterOnly", "false").build();
+    public static final Engine engine = Engine.newBuilder()
+            .option("engine.WarnInterpreterOnly", "false") // Set globally on the Engine
+            .option("js.foreign-object-prototype", "true")
+            .build();
 
     // All registered unload hooks tied to this kontext
     public final Queue hooks = new Queue(this);

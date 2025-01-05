@@ -1,4 +1,4 @@
-package grakkit.kontexts;
+package grakkit.kontext;
 
 import org.graalvm.polyglot.Source;
 

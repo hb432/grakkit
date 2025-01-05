@@ -2,8 +2,9 @@ package grakkit;
 
 import grakkit.api.JSLoader;
 import grakkit.api.Loader;
-import grakkit.kontexts.FileKontext;
-import grakkit.kontexts.Kontext;
+import grakkit.interop.NodeInterop;
+import grakkit.kontext.FileKontext;
+import grakkit.kontext.Kontext;
 import org.graalvm.polyglot.Value;
 
 import java.io.IOException;
@@ -20,7 +21,7 @@ public class Grakkit {
     public static final HashMap<String, LinkedList<Value>> topics = new HashMap<>();
 
     // The kontext running on the main thread
-    public static FileKontext kernelKontext;
+    public static Kontext kernelKontext; // Changed to base Kontext
 
     // All kontexts created with the kontext management system
     public static final LinkedList<Kontext> kontexts = new LinkedList<>();
@@ -31,11 +32,31 @@ public class Grakkit {
     // Current Grakkit configuration
     public static GrakkitConfig config;
 
+    // The Node.js interop context
+    private static NodeInterop nodeInterop;
+
     // Closes all open instances
     public static void close() {
-        Grakkit.kernelKontext.close();
-        new ArrayList<>(Grakkit.kontexts).forEach(Kontext::destroy);
+        System.out.println("[Grakkit] Closing Grakkit...");
+        if (nodeInterop != null) {
+            System.out.println("[Grakkit] Closing NodeInterop...");
+            nodeInterop.close();
+            nodeInterop = null;
+            System.out.println("[Grakkit] NodeInterop closed.");
+        }
+        if (Grakkit.kernelKontext != null) {
+            System.out.println("[Grakkit] Closing Kernel Kontext...");
+            Grakkit.kernelKontext.close();
+            System.out.println("[Grakkit] Kernel Kontext closed.");
+        }
+        System.out.println("[Grakkit] Destroying Kontexts...");
+        new ArrayList<>(Grakkit.kontexts).forEach(kontext -> {
+            System.out.println("[Grakkit] Destroying Kontext: " + kontext.props);
+            kontext.destroy();
+        });
+        System.out.println("[Grakkit] Closing GraalVM Engine...");
         Kontext.engine.close();
+        System.out.println("[Grakkit] Grakkit closed.");
     }
 
     // Initializes the Grakkit Environment
@@ -43,78 +64,69 @@ public class Grakkit {
         Paths.get(root).toFile().mkdir();
 
         Grakkit.config = new GrakkitConfig(root, "config.yml");
-        // first verify that node_modules/grakkit exists, and if not, create it and copy the js resources
+
+        boolean useNode = Grakkit.config.useNode; // Get the config option
+
+        // Handle node_modules directory
         if (!Paths.get(root, "node_modules", "grakkit").toFile().exists()) {
             try {
                 JSLoader.copyJsResources(Grakkit.class, Paths.get(root, "node_modules", "grakkit"));
-                Grakkit.kernelKontext = new FileKontext("grakkit", Grakkit.config.main, root);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
-        // add the lines console.log('Modern JS for Minecraft, with the Graal Kernel Kit!') and require('grakkit/index.js') to the main file
-        // if they don't already exist
-        Grakkit.kernelKontext = new FileKontext("grakkit", Grakkit.config.main, root);
+
+        // Initialize kernelKontext based on config
+        if (useNode) {
+            nodeInterop = new NodeInterop("grakkit", root);
+            Grakkit.kernelKontext = nodeInterop;
+        } else {
+            Grakkit.kernelKontext = new FileKontext("grakkit", Grakkit.config.main, root);
+        }
+
         try {
             Grakkit.kernelKontext.open();
+            Grakkit.kernelKontext.execute();
         } catch (Throwable e) {
             e.printStackTrace();
         }
     }
 
     // Locates the given class' true source location
-    /**
-     * Locates the base URL for the given class. This method tries to
-     * find the source location (JAR or directory) where the class is loaded from.
-     * @param clazz The class whose location should be resolved.
-     * @return The URL of the class's source location, or null if not found.
-     */
     public static URL locateClassSource(Class<?> clazz) {
-
-        // 1. Attempt to get the class location from the ProtectionDomain
-
         try {
             URL codeSourceLocation = clazz.getProtectionDomain().getCodeSource().getLocation();
             if (codeSourceLocation != null) {
-                return codeSourceLocation; // Return if we get the location from ProtectionDomain.
+                return codeSourceLocation;
             }
         } catch (SecurityException | NullPointerException ex) {
-            // Unable to get location from the ProtectionDomain.
-            // Proceed to try the class resource.
+            // Ignore
         }
 
-        // 2. Attempt to get the class location using getResource
-
         URL classResource = clazz.getResource(clazz.getSimpleName() + ".class");
-
         if (classResource != null) {
             String resourceLink = classResource.toString();
             String classFileSuffix = clazz.getCanonicalName().replace('.', '/') + ".class";
-
             if (resourceLink.endsWith(classFileSuffix)) {
-                // extract path from the url using the class suffix
                 String classPath = resourceLink.substring(0, resourceLink.length() - classFileSuffix.length());
                 if (classPath.startsWith("jar:")) {
-                    // trim `jar:` prefix and `!/` at the end
                     classPath = classPath.substring(4, classPath.length() - 2);
                 }
-
                 try {
-                    // construct path and return it.
                     return new URI(classPath).toURL();
                 } catch (Throwable ex) {
-                    // fail when path construction fails, simply return null.
+                    // Ignore
                 }
             }
         }
-
-        // No valid source can be found
         return null;
     }
 
     // Executes the task loop for all kontexts
     public static void tick() {
-        Grakkit.kernelKontext.tick();
+        if (Grakkit.kernelKontext != null) {
+            Grakkit.kernelKontext.tick();
+        }
         Grakkit.kontexts.forEach(Kontext::tick);
     }
 

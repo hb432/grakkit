@@ -1,6 +1,6 @@
 package grakkit.api;
 
-import grakkit.kontexts.Kontext;
+import grakkit.kontext.Kontext;
 
 import java.util.function.Consumer;
 

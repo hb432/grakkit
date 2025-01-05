@@ -1,5 +1,6 @@
-package grakkit.api;
+package grakkit.interop;
 
+import grakkit.api.JSError;
 import org.graalvm.polyglot.PolyglotException;
 
 import java.nio.charset.StandardCharsets;
